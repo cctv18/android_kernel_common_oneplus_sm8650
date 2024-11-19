@@ -1,4 +1,5 @@
 [abi_symbol_list]
+  android_vh_pcpu_rwsem_handler
   address_space_init_once
   bio_add_page
   bio_associate_blkg
@@ -203,8 +204,8 @@
   __traceiter_sched_stat_wait
   __traceiter_sched_waking
   __traceiter_task_rename
-  __traceiter_android_vh_test_clear_look_around_ref
   __traceiter_android_vh_tune_swappiness
+  __traceiter_android_vh_test_clear_look_around_ref
   __traceiter_android_vh_alloc_pages_reclaim_bypass
   __traceiter_android_vh_free_unref_page_bypass
   __traceiter_android_vh_kvmalloc_node_use_vmalloc
@@ -344,6 +345,10 @@
   wakeup_source_remove
   wake_up_state
   wq_worker_comm
+  __traceiter_android_vh_meminfo_proc_show
+  __tracepoint_android_vh_meminfo_proc_show
+  __traceiter_android_vh_tune_scan_type
+  __tracepoint_android_vh_tune_scan_type
   xt_register_match
   xt_unregister_match
   zero_pfn

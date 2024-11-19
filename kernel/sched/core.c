@@ -99,6 +99,8 @@
 #include <trace/hooks/dtask.h>
 #include <trace/hooks/cgroup.h>
 
+#include "../locking/locking_main.h"
+
 /*
  * Export tracepoints that act as a bare tracehook (ie: have no trace event
  * associated with them) to allow external modules to probe them.
@@ -126,6 +128,7 @@ EXPORT_TRACEPOINT_SYMBOL_GPL(sched_stat_blocked);
 
 DEFINE_PER_CPU_SHARED_ALIGNED(struct rq, runqueues);
 EXPORT_SYMBOL_GPL(runqueues);
+
 
 #ifdef CONFIG_SCHED_DEBUG
 /*
@@ -6701,6 +6704,7 @@ static void __sched notrace __schedule(unsigned int sched_mode)
 #endif
 
 	trace_android_rvh_schedule(sched_mode, prev, next, rq);
+	locking_record_switch_in_cs(prev);
 	if (likely(prev != next)) {
 		rq->nr_switches++;
 		/*
