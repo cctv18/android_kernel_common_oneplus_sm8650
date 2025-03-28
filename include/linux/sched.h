@@ -1938,30 +1938,6 @@ static inline int task_nice(const struct task_struct *p)
 	return PRIO_TO_NICE((p)->static_prio);
 }
 
-#ifdef CONFIG_SLIM_SCHED
-#define SCHED_PROP_DEADLINE_MASK (0xFF) /* deadline for ext sched class */
-#define SCHED_PROP_DEADLINE_LEVEL1 (1)  /* 1ms for user-aware audio tasks */
-#define SCHED_PROP_DEADLINE_LEVEL2 (2)  /* 2ms for user-aware touch tasks */
-#define SCHED_PROP_DEADLINE_LEVEL3 (3)  /* 4ms for user aware dispaly tasks */
-#define SCHED_PROP_DEADLINE_LEVEL4 (4)  /* 6ms */
-#define SCHED_PROP_DEADLINE_LEVEL5 (5)  /* 8ms */
-#define SCHED_PROP_DEADLINE_LEVEL6 (6)  /* 16ms */
-#define SCHED_PROP_DEADLINE_LEVEL7 (7)  /* 32ms */
-#define SCHED_PROP_DEADLINE_LEVEL8 (8)  /* 64ms */
-#define SCHED_PROP_DEADLINE_LEVEL9 (9)  /* 128ms */
-static inline long sched_prop_get_deadline_dsq_id(struct task_struct *p)
-{
-	return (p->sched_prop & SCHED_PROP_DEADLINE_MASK) - 1;
-}
-
-#define SCHED_PROP_TOP_THREAD_SHIFT (8)
-#define SCHED_PROP_TOP_THREAD_MASK  (0xf << SCHED_PROP_TOP_THREAD_SHIFT)
-static inline int sched_prop_get_top_thread_id(struct task_struct *p)
-{
-	return (p->sched_prop & SCHED_PROP_TOP_THREAD_MASK) >> SCHED_PROP_TOP_THREAD_SHIFT;
-}
-
-#endif
 extern int can_nice(const struct task_struct *p, const int nice);
 extern int task_curr(const struct task_struct *p);
 extern int idle_cpu(int cpu);

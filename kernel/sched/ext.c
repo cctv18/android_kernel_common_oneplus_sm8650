@@ -284,8 +284,6 @@ do {										\
 	__ret;									\
 })
 
-//#include "./slim_walt.c"
-
 /* @mask is constant, always inline to cull unnecessary branches */
 static __always_inline bool scx_kf_allowed(u32 mask)
 {
@@ -677,7 +675,6 @@ static void task_unlink_from_dsq(struct task_struct *p,
 	} else {
 		list_del_init(&p->scx->dsq_node.fifo);
 	}
-
 }
 
 static bool task_linked_on_dsq(struct task_struct *p)
@@ -1656,9 +1653,6 @@ static void set_next_task_scx(struct rq *rq, struct task_struct *p, bool first)
 	if (SCX_HAS_OP(running) && (p->scx->flags & SCX_TASK_QUEUED))
 		SCX_CALL_OP_TASK(SCX_KF_REST, running, p);
 
-	//if(p->scx->flags & SCX_TASK_QUEUED)
-	//	scx_update_task_ravg(p, rq, PICK_NEXT_TASK, rq->clock);
-
 	watchdog_unwatch_task(p, true);
 
 	/*
@@ -2191,7 +2185,6 @@ static int scx_ops_prepare_task(struct task_struct *p, struct task_group *tg)
 			return ret;
 		}
 	}
-	//scx_sched_init_task(p);
 
 	if (p->scx->disallow) {
 		struct rq *rq;
