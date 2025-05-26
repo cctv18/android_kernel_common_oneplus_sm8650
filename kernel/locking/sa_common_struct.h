@@ -175,7 +175,7 @@ struct oplus_lb {
 	/* used for active_balance to record the running task. */
 	pid_t pid;
 };
-
+#define OTS_IDX							(0)
 static inline struct oplus_task_struct *get_oplus_task_struct(struct task_struct *t)
 {
 	struct oplus_task_struct *ots = NULL;
