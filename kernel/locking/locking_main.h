@@ -72,6 +72,8 @@ struct rwsem_waiter {
 	bool handoff_set;
 };
 
+void locking_record_switch_in_cs(struct task_struct *tsk);
+
 #define LK_MUTEX_ENABLE         (1 << 0)
 #define LK_RWSEM_ENABLE         (1 << 1)
 #define LK_FUTEX_ENABLE         (1 << 2)
