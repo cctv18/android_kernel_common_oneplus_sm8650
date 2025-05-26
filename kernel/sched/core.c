@@ -101,7 +101,6 @@
 #include <trace/hooks/cgroup.h>
 
 #include "../locking/locking_main.h"
-#include "../locking/oplus_locking.h"
 
 /*
  * Export tracepoints that act as a bare tracehook (ie: have no trace event
