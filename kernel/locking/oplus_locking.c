@@ -22,7 +22,6 @@
 
 
 //#include <../kernel/oplus_cpu/sched/sched_assist/sa_common.h>
-#include "sa_common_struct.h"
 
 #include "locking_main.h"
 static inline struct oplus_task_struct *get_oplus_task_struct(struct task_struct *t);

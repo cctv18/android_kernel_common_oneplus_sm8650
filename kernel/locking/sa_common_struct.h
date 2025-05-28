@@ -175,21 +175,6 @@ struct oplus_lb {
 	/* used for active_balance to record the running task. */
 	pid_t pid;
 };
-#define OTS_IDX							(0)
-static inline struct oplus_task_struct *get_oplus_task_struct(struct task_struct *t)
-{
-	struct oplus_task_struct *ots = NULL;
-
-	/* not Skip idle thread */
-	if (!t)
-		return NULL;
-
-	ots = (struct oplus_task_struct *) READ_ONCE(t->android_oem_data1[OTS_IDX]);
-	if (IS_ERR_OR_NULL(ots))
-		return NULL;
-
-	return ots;
-}
 /*#endif*/
 
 #endif /* _OPLUS_SA_COMMON_STRUCT_H_ */

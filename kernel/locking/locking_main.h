@@ -6,6 +6,8 @@
 #ifndef _OPLUS_LOCKING_MAIN_H_
 #define _OPLUS_LOCKING_MAIN_H_
 
+#include "sa_common_struct.h"
+
 #define cond_trace_printk(cond, fmt, ...)	\
 do {										\
 	if (cond)								\
@@ -42,6 +44,9 @@ do {										\
 #define lk_info(fmt, ...) \
 		pr_info("[oplus_locking][%s]"fmt, __func__, ##__VA_ARGS__)
 
+#define OTS_IDX			0
+
+
 struct futex_uinfo {
 	u32 cmd;
 	u32 owner_tid;
@@ -72,18 +77,10 @@ struct rwsem_waiter {
 	bool handoff_set;
 };
 
-void locking_record_switch_in_cs(struct task_struct *tsk);
-
-#define LK_MUTEX_ENABLE         (1 << 0)
-#define LK_RWSEM_ENABLE         (1 << 1)
-#define LK_FUTEX_ENABLE         (1 << 2)
-#define LK_OSQ_ENABLE           (1 << 3)
-#define LK_PIFUTEX_ENABLE       (1 << 4)
-#define LK_PROTECT_ENABLE	(1 << 5)
-#define LK_RWSEM_RSPIN_ENABLE   (1 << 6)
-#define LK_MONITOR_ENABLE (1 << 6)
-#define LK_FEATURE_MASK (LK_MUTEX_ENABLE | LK_RWSEM_ENABLE | LK_FUTEX_ENABLE | \
-								LK_OSQ_ENABLE | LK_PROTECT_ENABLE | LK_MONITOR_ENABLE)
+#define LK_MUTEX_ENABLE (1 << 0)
+#define LK_RWSEM_ENABLE (1 << 1)
+#define LK_FUTEX_ENABLE (1 << 2)
+#define LK_OSQ_ENABLE   (1 << 3)
 
 #ifdef CONFIG_OPLUS_LOCKING_MONITOR
 /*
@@ -107,18 +104,15 @@ void locking_record_switch_in_cs(struct task_struct *tsk);
 extern unsigned int g_opt_enable;
 extern unsigned int g_opt_debug;
 
+extern atomic64_t futex_inherit_set_times;
+extern atomic64_t futex_inherit_unset_times;
+extern atomic64_t futex_inherit_useless_times;
+extern atomic64_t futex_low_count;
+extern atomic64_t futex_high_count;
+
 static inline bool locking_opt_enable(unsigned int enable)
 {
 	return g_opt_enable & enable;
-}
-
-static inline void oplus_lk_feat_enable(unsigned int lk_feat, bool enable)
-{
-	lk_feat &= LK_FEATURE_MASK;
-	if (enable)
-		g_opt_enable |= lk_feat;
-	else
-		g_opt_enable &= ~lk_feat;
 }
 
 #ifdef CONFIG_OPLUS_LOCKING_MONITOR
@@ -137,9 +131,6 @@ void register_rwsem_vendor_hooks(void);
 void register_mutex_vendor_hooks(void);
 void register_futex_vendor_hooks(void);
 void register_monitor_vendor_hooks(void);
-#ifdef CONFIG_OPLUS_LOCKING_PIFUTEX
-void register_rtmutex_vendor_hooks(void);
-#endif
 void lk_sysfs_init(void);
 #ifdef CONFIG_OPLUS_LOCKING_MONITOR
 int kern_lstat_init(void);
@@ -149,16 +140,26 @@ void unregister_rwsem_vendor_hooks(void);
 void unregister_mutex_vendor_hooks(void);
 void unregister_futex_vendor_hooks(void);
 void unregister_monitor_vendor_hooks(void);
-#ifdef CONFIG_OPLUS_LOCKING_PIFUTEX
-void unregister_rtmutex_vendor_hooks(void);
-#endif
 void lk_sysfs_exit(void);
 #ifdef CONFIG_OPLUS_LOCKING_MONITOR
 void kern_lstat_exit(void);
 #endif
-
-#ifdef CONFIG_LOCKING_PROTECT
-int sched_assist_locking_init(void);
-#endif
-
 #endif /* _OPLUS_LOCKING_MAIN_H_ */
+
+static inline struct oplus_task_struct *get_oplus_task_struct(struct task_struct *t)
+{
+	struct oplus_task_struct *ots = NULL;
+
+	/* not Skip idle thread */
+	if (!t)
+		return NULL;
+
+	ots = (struct oplus_task_struct *) READ_ONCE(t->android_oem_data1[OTS_IDX]);
+	if (IS_ERR_OR_NULL(ots))
+		return NULL;
+
+	return ots;
+}
+
+void locking_record_switch_in_cs(struct task_struct *tsk);
+
