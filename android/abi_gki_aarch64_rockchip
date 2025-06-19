@@ -200,6 +200,7 @@
   devm_clk_bulk_get
   devm_clk_bulk_get_all
   devm_clk_get
+  devm_clk_get_enabled
   devm_clk_get_optional
   devm_clk_hw_register
   devm_clk_register
@@ -252,6 +253,7 @@
   __devm_regmap_init_i2c
   __devm_regmap_init_mmio_clk
   devm_regulator_bulk_get
+  devm_regulator_bulk_get_enable
   devm_regulator_get
   devm_regulator_get_optional
   devm_regulator_register
@@ -1115,6 +1117,7 @@
   snd_soc_daifmt_parse_clock_provider_raw
   snd_soc_daifmt_parse_format
   snd_soc_dai_set_sysclk
+  snd_soc_dai_set_tdm_slot
   snd_soc_dapm_add_routes
   snd_soc_dapm_disable_pin_unlocked
   snd_soc_dapm_force_enable_pin_unlocked
@@ -1138,6 +1141,7 @@
   snd_soc_pm_ops
   snd_soc_put_enum_double
   snd_soc_put_volsw
+  snd_soc_set_runtime_hwparams
   snd_soc_unregister_component
   snprintf
   sort
@@ -1246,9 +1250,12 @@
   usb_hcd_resume_root_hub
   usb_hcd_unlink_urb_from_ep
   usb_hid_driver
+  usbnet_cdc_unbind
+  usbnet_cdc_zte_rx_fixup
   usbnet_change_mtu
   usbnet_defer_kevent
   usbnet_disconnect
+  usbnet_generic_cdc_bind
   usbnet_get_drvinfo
   usbnet_get_endpoints
   usbnet_get_link
@@ -1444,6 +1451,10 @@
   sdio_readw
   sdio_register_driver
   sdio_release_host
+  sdio_retune_crc_disable
+  sdio_retune_crc_enable
+  sdio_retune_hold_now
+  sdio_retune_release
   sdio_set_block_size
   sdio_set_host_pm_flags
   sdio_unregister_driver
@@ -1966,6 +1977,7 @@
   scsi_remove_device
   scsi_remove_host
   scsi_rescan_device
+  scsi_resume_device
   scsi_schedule_eh
   scsi_sense_desc_find
   scsi_set_sense_field_pointer
@@ -2093,6 +2105,7 @@
 # required by pcie-dw-rockchip.ko
   device_release_driver
   dw_pcie_find_ext_capability
+  dw_pcie_host_deinit
   dw_pcie_host_init
   dw_pcie_link_up
   dw_pcie_read
@@ -2109,6 +2122,7 @@
   devm_pci_remap_cfg_resource
   jiffies_to_usecs
   of_pci_get_max_link_speed
+  of_pci_get_slot_power_limit
   pci_host_probe
   pci_remove_root_bus
   pci_stop_root_bus
@@ -2447,7 +2461,10 @@
   devm_of_phy_get_by_index
   driver_find_device
   drm_aperture_remove_conflicting_framebuffers
+  drm_atomic_add_encoder_bridges
+  drm_atomic_bridge_chain_check
   drm_atomic_commit
+  drm_atomic_get_bridge_state
   drm_atomic_get_plane_state
   drm_atomic_helper_check
   drm_atomic_helper_check_plane_state
@@ -2708,6 +2725,19 @@
 # required by snd-soc-rockchip-hdmi.ko
   snd_soc_dapm_new_widgets
 
+# required by snd-soc-rockchip-multi-dais.ko
+  dma_get_slave_caps
+  snd_hwparams_to_dma_slave_config
+  snd_pcm_lib_free_pages
+  snd_pcm_lib_ioctl
+  snd_pcm_lib_malloc_pages
+  snd_pcm_lib_preallocate_pages
+  snd_pcm_stream_lock_irq
+  snd_pcm_stream_unlock_irq
+  snd_soc_dai_set_fmt
+  snd_soc_find_dai_with_mutex
+  snd_soc_rtdcom_lookup
+
 # required by snd-soc-rockchip-multicodecs.ko
   snd_soc_dapm_get_pin_switch
   snd_soc_dapm_info_pin_switch
@@ -2745,7 +2775,6 @@
   snd_pcm_hw_constraint_minmax
   snd_soc_component_set_sysclk
   snd_soc_dai_active
-  snd_soc_dai_set_tdm_slot
   snd_soc_of_parse_audio_simple_widgets
   snd_soc_of_parse_pin_switches
   snd_soc_runtime_calc_hw
@@ -2995,3 +3024,29 @@
 
 # required by vl6180.ko
   iio_read_const_attr
+
+# required by aic_btusb.ko
+  usb_disable_autosuspend
+
+# required by wlan_mt7663_usb.ko
+  usb_anchor_empty
+  usb_reset_endpoint
+
+# required by dw_hdmi_qp.ko
+  drm_edid_alloc
+  drm_edid_read_ddc
+  drm_edid_raw
+  drm_edid_connector_update
+
+# required by 8250_dw.ko
+  serial8250_em485_supported
+  serial8250_em485_start_tx
+  serial8250_em485_stop_tx
+  serial8250_em485_config
+  serial8250_do_set_divisor
+  serial8250_do_set_ldisc
+  serial8250_update_uartclk
+  serial8250_clear_and_reinit_fifos
+
+# required by pl2303.ko
+  tty_termios_hw_change

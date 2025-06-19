@@ -627,7 +627,7 @@ static void dd_limit_depth(blk_opf_t opf, struct blk_mq_alloc_data *data)
 	 * Throttle asynchronous requests and writes such that these requests
 	 * do not block the allocation of synchronous requests.
 	 */
-        data->shallow_depth = dd_to_word_depth(data->hctx, dd->async_depth);
+	data->shallow_depth = dd_to_word_depth(data->hctx, dd->async_depth);
 }
 
 /* Called by blk_mq_update_nr_requests(). */
@@ -637,9 +637,9 @@ static void dd_depth_updated(struct blk_mq_hw_ctx *hctx)
 	struct deadline_data *dd = q->elevator->elevator_data;
 	struct blk_mq_tags *tags = hctx->sched_tags;
 
-        dd->async_depth = q->nr_requests;
+	dd->async_depth = q->nr_requests;
 
-        sbitmap_queue_min_shallow_depth(&tags->bitmap_tags, 1);
+	sbitmap_queue_min_shallow_depth(&tags->bitmap_tags, 1);
 }
 
 /* Called by blk_mq_init_hctx() and blk_mq_init_sched(). */
