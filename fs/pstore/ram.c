@@ -722,10 +722,6 @@ static int ramoops_probe(struct platform_device *pdev)
 	size_t dump_mem_sz;
 	phys_addr_t paddr;
 	int err = -EINVAL;
-	/* 新增：设备树节点指针 */
-	struct device_node *np = dev->of_node;
-	struct resource res;
-	int ret;
 
 	/*
 	 * Only a single ramoops area allowed at a time, so fail extra
@@ -752,35 +748,6 @@ static int ramoops_probe(struct platform_device *pdev)
 		goto fail_out;
 	}
 
-	/* ======= BEGIN PATCH: 动态获取设备树保留内存区域 ======= */
-	/*
-	 * 通用修复：从设备树直接获取正确的保留内存区域
-	 * 避免bootloader到内核传递过程中的地址截断问题
-	 */
-	if (np) {
-		ret = of_address_to_resource(np, 0, &res);
-		if (!ret) {
-			phys_addr_t dt_start = res.start;
-			size_t dt_size = resource_size(&res);
-			
-			/* 检查配置地址与设备树地址是否匹配 */
-			if (pdata->mem_address != dt_start || 
-			    pdata->mem_size != dt_size) {
-				pr_info("ramoops: correcting mem region: "
-					"config 0x%llx@0x%llx -> dt 0x%zx@0x%llx\n",
-					(unsigned long long)pdata->mem_size,
-					(unsigned long long)pdata->mem_address,
-					dt_size, (unsigned long long)dt_start);
-				
-				pdata->mem_address = dt_start;
-				pdata->mem_size = dt_size;
-			}
-		} else {
-			pr_warn("ramoops: failed to get DT resource, using configured values\n");
-		}
-	}
-	/* ======= END PATCH ======= */
-
 	if (!pdata->mem_size || (!pdata->record_size && !pdata->console_size &&
 			!pdata->ftrace_size && !pdata->pmsg_size)) {
 		pr_err("The memory size and the record/console size must be "
@@ -788,58 +755,6 @@ static int ramoops_probe(struct platform_device *pdev)
 		err = -EINVAL;
 		goto fail_out;
 	}
-
-	/* ======= BEGIN PATCH: 动态设置record_size ======= */
-	/*
-	 * 智能分配策略：
-	 * 1. 优先保证至少64KB的record空间
-	 * 2. 当空间不足时，按优先级调整其他区域大小
-	 *    (dmesg > console > pmsg > ftrace)
-	 */
-	if (pdata->record_size == 0) {
-		const size_t min_record = SZ_64K;
-		const size_t min_console = SZ_64K;
-		const size_t min_pmsg = SZ_64K;
-		size_t reserved = pdata->console_size + pdata->pmsg_size + pdata->ftrace_size;
-		size_t available = pdata->mem_size > reserved ? 
-				  pdata->mem_size - reserved : 0;
-		
-		if (available >= min_record) {
-			// 使用剩余空间
-			pdata->record_size = available;
-		} else {
-			// 空间不足，需要调整其他区域
-			size_t need = min_record - available;
-			
-			// 策略1：缩减控制台空间（保留最小64KB）
-			if (pdata->console_size > min_console + need) {
-				pdata->console_size -= need;
-				pdata->record_size = min_record;
-				pr_info("ramoops: reduced console_size by 0x%zx for record\n", need);
-			} 
-			// 策略2：缩减pmsg空间（保留最小64KB）
-			else if (pdata->pmsg_size > min_pmsg + need) {
-				pdata->pmsg_size -= need;
-				pdata->record_size = min_record;
-				pr_info("ramoops: reduced pmsg_size by 0x%zx for record\n", need);
-			}
-			// 策略3：完全禁用ftrace
-			else if (pdata->ftrace_size > 0) {
-				pdata->ftrace_size = 0;
-				pdata->record_size = min_record;
-				pr_info("ramoops: disabled ftrace for record_size\n");
-			}
-			// 策略4：保底方案
-			else {
-				pdata->record_size = min_record;
-				pr_warn("ramoops: force set record_size=0x%zx, may exceed memory\n",
-					min_record);
-			}
-		}
-		
-		pr_info("ramoops: auto-set record_size=0x%zx\n", pdata->record_size);
-	}
-	/* ======= END PATCH ======= */
 
 	if (pdata->record_size && !is_power_of_2(pdata->record_size))
 		pdata->record_size = rounddown_pow_of_two(pdata->record_size);
@@ -849,24 +764,6 @@ static int ramoops_probe(struct platform_device *pdev)
 		pdata->ftrace_size = rounddown_pow_of_two(pdata->ftrace_size);
 	if (pdata->pmsg_size && !is_power_of_2(pdata->pmsg_size))
 		pdata->pmsg_size = rounddown_pow_of_two(pdata->pmsg_size);
-
-	/* ======= BEGIN PATCH: 动态设置压缩缓冲区 ======= */
-#ifdef CONFIG_PSTORE_COMPRESS
-	/*
-	 * 压缩缓冲区智能配置
-	 * 避免"Invalid compression size for deflate: 0"错误
-	 */
-	if (pdata->flags & RAMOOPS_FLAG_COMPRESS && pdata->compress_size == 0) {
-		// 基于record_size动态计算（1/4大小，4KB-16KB范围）
-		size_t compress_size = pdata->record_size / 4;
-		compress_size = max_t(size_t, compress_size, SZ_4K);
-		compress_size = min_t(size_t, compress_size, SZ_16K);
-		
-		pdata->compress_size = compress_size;
-		pr_info("ramoops: auto-set compress_size=0x%zx\n", compress_size);
-	}
-#endif
-	/* ======= END PATCH ======= */
 
 	cxt->size = pdata->mem_size;
 	cxt->phys_addr = pdata->mem_address;
