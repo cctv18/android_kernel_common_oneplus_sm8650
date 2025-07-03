@@ -722,6 +722,9 @@ static int ramoops_probe(struct platform_device *pdev)
 	size_t dump_mem_sz;
 	phys_addr_t paddr;
 	int err = -EINVAL;
+	struct device_node *np = dev->of_node;
+	struct resource res;
+	int ret;
 
 	/*
 	 * Only a single ramoops area allowed at a time, so fail extra
@@ -748,12 +751,83 @@ static int ramoops_probe(struct platform_device *pdev)
 		goto fail_out;
 	}
 
+	/* ======= 关键修复：确保正确获取设备树地址 ======= */
+	if (np) {
+		ret = of_address_to_resource(np, 0, &res);
+		if (!ret) {
+			phys_addr_t dt_start = res.start;
+			size_t dt_size = resource_size(&res);
+			
+			/* 打印调试信息 */
+			pr_info("ramoops: DT resource: 0x%zx@0x%llx\n",
+				dt_size, (unsigned long long)dt_start);
+			pr_info("ramoops: Current config: 0x%zx@0x%llx\n",
+				pdata->mem_size, (unsigned long long)pdata->mem_address);
+			
+			/* 强制使用设备树报告的地址和大小 */
+			pdata->mem_address = dt_start;
+			pdata->mem_size = dt_size;
+			pr_info("ramoops: Using corrected DT address: 0x%zx@0x%llx\n",
+				pdata->mem_size, (unsigned long long)pdata->mem_address);
+		} else {
+			pr_warn("ramoops: failed to get DT resource, error=%d\n", ret);
+		}
+	} else {
+		pr_warn("ramoops: no device node, using configured address\n");
+	}
+
 	if (!pdata->mem_size || (!pdata->record_size && !pdata->console_size &&
 			!pdata->ftrace_size && !pdata->pmsg_size)) {
 		pr_err("The memory size and the record/console size must be "
 			"non-zero\n");
 		err = -EINVAL;
 		goto fail_out;
+	}
+
+	/* ======= 动态设置record_size ======= */
+	if (pdata->record_size == 0) {
+		const size_t min_record = SZ_64K;
+		const size_t min_console = SZ_64K;
+		const size_t min_pmsg = SZ_64K;
+		size_t reserved = pdata->console_size + pdata->pmsg_size + pdata->ftrace_size;
+		size_t available = pdata->mem_size > reserved ? 
+				  pdata->mem_size - reserved : 0;
+		
+		if (available >= min_record) {
+			pdata->record_size = available;
+		} else {
+			size_t need = min_record - available;
+			
+			if (pdata->console_size > min_console + need) {
+				pdata->console_size -= need;
+				pdata->record_size = min_record;
+				pr_info("ramoops: reduced console_size by 0x%zx for record\n", need);
+			} 
+			else if (pdata->pmsg_size > min_pmsg + need) {
+				pdata->pmsg_size -= need;
+				pdata->record_size = min_record;
+				pr_info("ramoops: reduced pmsg_size by 0x%zx for record\n", need);
+			}
+			else if (pdata->ftrace_size > 0) {
+				pdata->ftrace_size = 0;
+				pdata->record_size = min_record;
+				pr_info("ramoops: disabled ftrace for record_size\n");
+			}
+			else {
+				pdata->record_size = min_record;
+				pr_warn("ramoops: force set record_size=0x%zx, may exceed memory\n",
+					min_record);
+			}
+		}
+		
+		pr_info("ramoops: auto-set record_size=0x%zx\n", pdata->record_size);
+	}
+
+	/* ======= 关键修复：确保record_size有效 ======= */
+	if (pdata->record_size > 0 && pdata->record_size < SZ_4K) {
+		pr_warn("ramoops: record_size too small (%zu), increasing to minimum 4KB\n",
+			pdata->record_size);
+		pdata->record_size = SZ_4K;
 	}
 
 	if (pdata->record_size && !is_power_of_2(pdata->record_size))
@@ -832,6 +906,17 @@ static int ramoops_probe(struct platform_device *pdev)
 	 */
 	if (cxt->pstore.flags & PSTORE_FLAGS_DMESG) {
 		cxt->pstore.bufsize = cxt->dprzs[0]->buffer_size;
+		
+		/* ======= 关键修复：确保缓冲区大小有效 ======= */
+		if (cxt->pstore.bufsize == 0) {
+			pr_warn("ramoops: buffer_size is 0, setting to minimum usable size (4KB)\n");
+			cxt->pstore.bufsize = SZ_4K;
+		} else if (cxt->pstore.bufsize < SZ_1K) {
+			pr_warn("ramoops: buffer_size too small (%zu), increasing to 4KB\n",
+				cxt->pstore.bufsize);
+			cxt->pstore.bufsize = SZ_4K;
+		}
+		
 		cxt->pstore.buf = kzalloc(cxt->pstore.bufsize, GFP_KERNEL);
 		if (!cxt->pstore.buf) {
 			pr_err("cannot allocate pstore crash dump buffer\n");
