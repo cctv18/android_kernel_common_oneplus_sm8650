@@ -3810,8 +3810,8 @@ static DEFINE_PER_CPU(struct scx_bpf_error_bstr_bufs, scx_bpf_error_bstr_bufs);
 void scx_bpf_error_bstr(char *fmt, unsigned long long *data, u32 data__sz)
 {
 	struct scx_bpf_error_bstr_bufs *bufs;
+	struct bpf_bprintf_data bprintf_data;
 	unsigned long flags;
-	u32 *bin_args;
 	int ret;
 
 	local_irq_save(flags);
@@ -3830,15 +3830,15 @@ void scx_bpf_error_bstr(char *fmt, unsigned long long *data, u32 data__sz)
 		goto out_restore;
 	}
 
-	ret = bpf_bprintf_prepare(fmt, UINT_MAX, bufs->data, &bin_args, data__sz / 8);
+	ret = bpf_bprintf_prepare(fmt, UINT_MAX, bufs->data, data__sz / 8, &bprintf_data);
 	if (ret < 0) {
 		scx_ops_error("failed to format prepration (%d)", ret);
 		goto out_restore;
 	}
 
 	ret = bstr_printf(bufs->msg, sizeof(bufs->msg), fmt,
-			  bin_args);
-	bpf_bprintf_cleanup();
+			  bprintf_data.bin_args);
+	bpf_bprintf_cleanup(&bprintf_data);
 	if (ret < 0) {
 		scx_ops_error("scx_ops_error(\"%s\", %p, %u) failed to format",
 			      fmt, data, data__sz);
