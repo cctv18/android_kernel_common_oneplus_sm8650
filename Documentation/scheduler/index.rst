@@ -17,6 +17,7 @@ Linux Scheduler
     schedutil
     sched-nice-design
     sched-rt-group
+    sched-ext
     sched-stats
     sched-debug
 
