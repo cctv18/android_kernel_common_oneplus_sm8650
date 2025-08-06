@@ -5422,6 +5422,11 @@ static void css_release_work_fn(struct work_struct *work)
 
 	cgroup_lock();
 
+        if (css->flags & CSS_RELEASED) {
+                mutex_unlock(&cgroup_mutex);
+                return;
+        }
+
 	css->flags |= CSS_RELEASED;
 	list_del_rcu(&css->sibling);
 
@@ -5472,8 +5477,17 @@ static void css_release(struct percpu_ref *ref)
 	struct cgroup_subsys_state *css =
 		container_of(ref, struct cgroup_subsys_state, refcnt);
 
-	INIT_WORK(&css->destroy_work, css_release_work_fn);
-	queue_work(cgroup_destroy_wq, &css->destroy_work);
+	unsigned long flags;
+
+	local_irq_save(flags);
+	if (!test_and_set_bit(WORK_STRUCT_PENDING_BIT,
+		work_data_bits(&css->destroy_work))) {
+		local_irq_restore(flags);
+		INIT_WORK(&css->destroy_work, css_release_work_fn);
+		queue_work(cgroup_destroy_wq, &css->destroy_work);
+	} else {
+		local_irq_restore(flags);
+	}
 }
 
 static void init_and_link_css(struct cgroup_subsys_state *css,
