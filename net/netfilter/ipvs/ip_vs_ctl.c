@@ -52,6 +52,9 @@ MODULE_ALIAS_GENL_FAMILY(IPVS_GENL_NAME);
 /* semaphore for IPVS sockopts. And, [gs]etsockopt may sleep. */
 static DEFINE_MUTEX(__ip_vs_mutex);
 
+/* Global initialization state - prevents premature event processing */
+static atomic_t ip_vs_initialized = ATOMIC_INIT(0);
+
 /* sysctl variables */
 
 #ifdef CONFIG_IP_VS_DEBUG
@@ -1162,6 +1165,9 @@ static void __ip_vs_del_dest(struct netns_ipvs *ipvs, struct ip_vs_dest *dest,
 	 */
 	ip_vs_rs_unhash(dest);
 
+	/* Clear device references before moving to trash to prevent use-after-free */
+	__ip_vs_dst_cache_reset(dest);
+
 	spin_lock_bh(&ipvs->dest_trash_lock);
 	IP_VS_DBG_BUF(3, "Moving dest %s:%u into trash, dest->refcnt=%d\n",
 		      IP_VS_DBG_ADDR(dest->af, &dest->addr), ntohs(dest->port),
@@ -1690,6 +1696,11 @@ static int ip_vs_dst_event(struct notifier_block *this, unsigned long event,
 	struct netns_ipvs *ipvs = net_ipvs(net);
 	struct ip_vs_service *svc;
 	struct ip_vs_dest *dest;
+
+	/* Prevent event processing before IPVS is fully initialized */
+	if (!atomic_read(&ip_vs_initialized))
+		goto out_unlock_dst_event;
+
 	unsigned int idx;
 
 	if (event != NETDEV_DOWN || !ipvs)
@@ -1719,10 +1730,10 @@ static int ip_vs_dst_event(struct notifier_block *this, unsigned long event,
 	}
 
 	spin_lock_bh(&ipvs->dest_trash_lock);
-	list_for_each_entry(dest, &ipvs->dest_trash, t_list) {
-		ip_vs_forget_dev(dest, dev);
-	}
-	spin_unlock_bh(&ipvs->dest_trash_lock);
+ 	spin_unlock_bh(&ipvs->dest_trash_lock);
+	goto out_unlock_dst_event;
+
+out_unlock_dst_event:
 	mutex_unlock(&__ip_vs_mutex);
 	LeaveFunction(2);
 	return NOTIFY_DONE;
@@ -2257,7 +2268,11 @@ static int ip_vs_stats_show(struct seq_file *seq, void *v)
 		 "   Total Incoming Outgoing         Incoming         Outgoing\n");
 	seq_puts(seq,
 		 "   Conns  Packets  Packets            Bytes            Bytes\n");
-
+	
+	/* Ensure IPVS is fully initialized before accessing statistics */
+	if (!atomic_read(&ip_vs_initialized))
+		return 0;
+	
 	ip_vs_copy_stats(&show, &net_ipvs(net)->tot_stats);
 	seq_printf(seq, "%8LX %8LX %8LX %16LX %16LX\n\n",
 		   (unsigned long long)show.conns,
@@ -2300,6 +2315,11 @@ static int ip_vs_stats_percpu_show(struct seq_file *seq, void *v)
 
 		do {
 			start = u64_stats_fetch_begin_irq(&u->syncp);
+			/* Ensure IPVS is fully initialized before accessing statistics */
+			if (!atomic_read(&ip_vs_initialized)) {
+				conns = inpkts = outpkts = inbytes = outbytes = 0;
+				break;
+			}
 			conns = u64_stats_read(&u->cnt.conns);
 			inpkts = u64_stats_read(&u->cnt.inpkts);
 			outpkts = u64_stats_read(&u->cnt.outpkts);
@@ -2314,6 +2334,11 @@ static int ip_vs_stats_percpu_show(struct seq_file *seq, void *v)
 	}
 
 	ip_vs_copy_stats(&kstats, tot_stats);
+	
+	/* Ensure IPVS is fully initialized before accessing statistics */
+	if (!atomic_read(&ip_vs_initialized)) {
+		return 0;
+	}
 
 	seq_printf(seq, "  ~ %8LX %8LX %8LX %16LX %16LX\n\n",
 		   (unsigned long long)kstats.conns,
@@ -4274,6 +4299,10 @@ int __init ip_vs_control_init(void)
 	ret = register_netdevice_notifier(&ip_vs_dst_notifier);
 	if (ret < 0)
 		return ret;
+
+	/* Mark IPVS as initialized after all components are ready */
+	atomic_set(&ip_vs_initialized, 1);
+	pr_info("IPVS: Initialization completed successfully\n");
 
 	LeaveFunction(2);
 	return 0;
