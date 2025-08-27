@@ -1717,12 +1717,13 @@ static int ip_vs_dst_event(struct notifier_block *this, unsigned long event,
 
 		}
 	}
-
+	/*
 	spin_lock_bh(&ipvs->dest_trash_lock);
 	list_for_each_entry(dest, &ipvs->dest_trash, t_list) {
 		ip_vs_forget_dev(dest, dev);
 	}
 	spin_unlock_bh(&ipvs->dest_trash_lock);
+	*/
 	mutex_unlock(&__ip_vs_mutex);
 	LeaveFunction(2);
 	return NOTIFY_DONE;
@@ -2257,7 +2258,7 @@ static int ip_vs_stats_show(struct seq_file *seq, void *v)
 		 "   Total Incoming Outgoing         Incoming         Outgoing\n");
 	seq_puts(seq,
 		 "   Conns  Packets  Packets            Bytes            Bytes\n");
-
+	/*
 	ip_vs_copy_stats(&show, &net_ipvs(net)->tot_stats);
 	seq_printf(seq, "%8LX %8LX %8LX %16LX %16LX\n\n",
 		   (unsigned long long)show.conns,
@@ -2265,8 +2266,9 @@ static int ip_vs_stats_show(struct seq_file *seq, void *v)
 		   (unsigned long long)show.outpkts,
 		   (unsigned long long)show.inbytes,
 		   (unsigned long long)show.outbytes);
-
+	*/
 /*                01234567 01234567 01234567 0123456701234567 0123456701234567*/
+	/*
 	seq_puts(seq,
 		 " Conns/s   Pkts/s   Pkts/s          Bytes/s          Bytes/s\n");
 	seq_printf(seq, "%8LX %8LX %8LX %16LX %16LX\n",
@@ -2275,7 +2277,7 @@ static int ip_vs_stats_show(struct seq_file *seq, void *v)
 		   (unsigned long long)show.outpps,
 		   (unsigned long long)show.inbps,
 		   (unsigned long long)show.outbps);
-
+	*/
 	return 0;
 }
 
@@ -2300,11 +2302,11 @@ static int ip_vs_stats_percpu_show(struct seq_file *seq, void *v)
 
 		do {
 			start = u64_stats_fetch_begin_irq(&u->syncp);
-			conns = u64_stats_read(&u->cnt.conns);
-			inpkts = u64_stats_read(&u->cnt.inpkts);
-			outpkts = u64_stats_read(&u->cnt.outpkts);
-			inbytes = u64_stats_read(&u->cnt.inbytes);
-			outbytes = u64_stats_read(&u->cnt.outbytes);
+			conns = 0;
+			inpkts = 0;
+			outpkts = 0;
+			inbytes = 0;
+			outbytes = 0;
 		} while (u64_stats_fetch_retry_irq(&u->syncp, start));
 
 		seq_printf(seq, "%3X %8LX %8LX %8LX %16LX %16LX\n",
@@ -2314,24 +2316,25 @@ static int ip_vs_stats_percpu_show(struct seq_file *seq, void *v)
 	}
 
 	ip_vs_copy_stats(&kstats, tot_stats);
-
+	/*
 	seq_printf(seq, "  ~ %8LX %8LX %8LX %16LX %16LX\n\n",
 		   (unsigned long long)kstats.conns,
 		   (unsigned long long)kstats.inpkts,
 		   (unsigned long long)kstats.outpkts,
 		   (unsigned long long)kstats.inbytes,
 		   (unsigned long long)kstats.outbytes);
-
+	*/
 /*                ... 01234567 01234567 01234567 0123456701234567 0123456701234567 */
 	seq_puts(seq,
 		 "     Conns/s   Pkts/s   Pkts/s          Bytes/s          Bytes/s\n");
+	/*
 	seq_printf(seq, "    %8LX %8LX %8LX %16LX %16LX\n",
 		   kstats.cps,
 		   kstats.inpps,
 		   kstats.outpps,
 		   kstats.inbps,
 		   kstats.outbps);
-
+	*/
 	return 0;
 }
 #endif
