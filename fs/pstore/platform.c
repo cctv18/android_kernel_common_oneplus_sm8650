@@ -49,9 +49,9 @@ MODULE_PARM_DESC(update_ms, "milliseconds before pstore updates its content "
 
 /* Names should be in the same order as the enum pstore_type_id */
 static const char * const pstore_type_names[] = {
-	"dmesg",
-	"mce",
 	"console",
+	"mce",
+	"unused",
 	"ftrace",
 	"rtas",
 	"powerpc-ofw",
@@ -160,6 +160,8 @@ static bool pstore_cannot_block_path(enum kmsg_dump_reason reason)
 	 * pstore_info::buf_lock.
 	 */
 	case KMSG_DUMP_EMERG:
+		return true;
+	case KMSG_DUMP_SHUTDOWN:
 		return true;
 	default:
 		return false;
