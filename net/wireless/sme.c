@@ -489,6 +489,7 @@ static void cfg80211_wdev_release_bsses(struct wireless_dev *wdev)
 		cfg80211_put_bss(wdev->wiphy,
 				 &wdev->links[link].client.current_bss->pub);
 		wdev->links[link].client.current_bss = NULL;
+		wdev->valid_links = 0;
 	}
 }
 
@@ -1359,6 +1360,7 @@ void __cfg80211_disconnected(struct net_device *dev, const u8 *ie,
 	wdev->conn_owner_nlportid = 0;
 	kfree_sensitive(wdev->connect_keys);
 	wdev->connect_keys = NULL;
+	pr_err("===qcdbg===, valid_links is %d", wdev->valid_links);
 
 	nl80211_send_disconnected(rdev, dev, reason, ie, ie_len, from_ap);
 

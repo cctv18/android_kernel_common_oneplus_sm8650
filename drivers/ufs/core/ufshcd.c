@@ -6495,10 +6495,8 @@ static bool ufshcd_abort_all(struct ufs_hba *hba)
 {
 	bool needs_reset = false;
 	int tag, ret;
-
 	if (is_mcq_enabled(hba)) {
 		struct ufshcd_lrb *lrbp;
-
 		for (tag = 0; tag < hba->nutrs; tag++) {
 			lrbp = &hba->lrb[tag];
 			if (!ufshcd_cmd_inflight(lrbp->cmd))

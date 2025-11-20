@@ -1431,6 +1431,7 @@ static void z_erofs_decompress_kickoff(struct z_erofs_decompressqueue *io,
 				z_erofs_pcpu_workers[raw_smp_processor_id()]);
 		if (!worker) {
 			INIT_WORK(&io->u.work, z_erofs_decompressqueue_work);
+
 			queue_work(z_erofs_workqueue, &io->u.work);
 		} else {
 			kthread_queue_work(worker, &io->u.kthread_work);
@@ -1616,7 +1617,6 @@ static void z_erofs_submissionqueue_endio(struct bio *bio)
 	blk_status_t err = bio->bi_status;
 	struct bio_vec *bvec;
 	struct bvec_iter_all iter_all;
-
 	bio_for_each_segment_all(bvec, bio, iter_all) {
 		struct page *page = bvec->bv_page;
 

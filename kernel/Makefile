@@ -21,6 +21,14 @@ ifdef CONFIG_FUNCTION_TRACER
 CFLAGS_REMOVE_irq_work.o = $(CC_FLAGS_FTRACE)
 endif
 
+PGO_PROFILE_softirq.o := n
+PGO_PROFILE_extable.o := n
+PGO_PROFILE_stacktrace.o := n
+PGO_PROFILE_kcov.o := n
+PGO_PROFILE_softirq.o := n
+PGO_PROFILE_stackleak.o := n
+PGO_PROFILE_module_signature.o := n
+
 # Prevents flicker of uninteresting __do_softirq()/__local_bh_disable_ip()
 # in coverage traces.
 KCOV_INSTRUMENT_softirq.o := n
@@ -113,6 +121,7 @@ obj-$(CONFIG_HAVE_STATIC_CALL_INLINE) += static_call_inline.o
 obj-$(CONFIG_CFI_CLANG) += cfi.o
 obj-$(CONFIG_NUMA) += numa.o
 
+obj-$(CONFIG_PGO_CLANG) += pgo/
 obj-$(CONFIG_PERF_EVENTS) += events/
 
 obj-$(CONFIG_USER_RETURN_NOTIFIER) += user-return-notifier.o
@@ -128,6 +137,10 @@ obj-$(CONFIG_WATCH_QUEUE) += watch_queue.o
 
 obj-$(CONFIG_RESOURCE_KUNIT_TEST) += resource_kunit.o
 obj-$(CONFIG_SYSCTL_KUNIT_TEST) += sysctl-test.o
+
+#ifdef CONFIG_OPLUS_SCHED_TUNE
+obj-$(CONFIG_OPLUS_SCHED_TUNE) += oplus_cpu/sched/sched_tune/
+#endif /* CONFIG_OPLUS_SCHED_TUNE */
 
 CFLAGS_stackleak.o += $(DISABLE_STACKLEAK_PLUGIN)
 obj-$(CONFIG_GCC_PLUGIN_STACKLEAK) += stackleak.o
