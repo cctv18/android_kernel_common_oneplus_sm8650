@@ -2006,10 +2006,6 @@ static void __free_pages_ok(struct page *page, unsigned int order,
 #endif
 
 	migratetype = get_pfnblock_migratetype(page, pfn);
-#ifdef CONFIG_OPLUS_FEATURE_UXMEM_OPT
-	if (uxmempool_refill(page, order, migratetype))
-		return;
-#endif
 	trace_android_vh_free_unref_page_bypass(page, order, migratetype, &skip_free_unref_page);
 	if (skip_free_unref_page)
 		return;
@@ -3346,18 +3342,12 @@ static bool unreserve_highatomic_pageblock(const struct alloc_context *ac,
 
 	for_each_zone_zonelist_nodemask(zone, z, zonelist, ac->highest_zoneidx,
 								ac->nodemask) {
-
-#ifdef CONFIG_OPLUS_FEATURE_UXMEM_OPT
-		if (!force && zone->nr_reserved_highatomic <=
-					(SZ_16M >> PAGE_SHIFT))
-#else
 		/*
 		 * Preserve at least one pageblock unless memory pressure
 		 * is really high.
 		 */
 		if (!force && zone->nr_reserved_highatomic <=
 					pageblock_nr_pages)
-#endif /* CONFIG_OPLUS_FEATURE_UXMEM_OPT */
 			continue;
 
 		trace_android_vh_unreserve_highatomic_bypass(force, zone,
@@ -3627,11 +3617,6 @@ static struct list_head *get_populated_pcp_list(struct zone *zone,
 		int batch = READ_ONCE(pcp->batch);
 		int alloced;
 
-#ifdef CONFIG_OPLUS_FEATURE_UXMEM_OPT
-		fill_pcplist_from_uxmempool(zone, order, pcp, migratetype, list);
-		if (!list_empty(list))
-			return list;
-#endif
 		trace_android_vh_rmqueue_bulk_bypass(order, pcp, migratetype, list);
 		if (!list_empty(list))
 			return list;
@@ -3981,11 +3966,6 @@ void free_unref_page(struct page *page, unsigned int order)
 	 * excessively into the page allocator
 	 */
 	migratetype = pcpmigratetype = get_pcppage_migratetype(page);
-
-#ifdef CONFIG_OPLUS_FEATURE_UXMEM_OPT
-	if (uxmempool_refill(page, order, migratetype))
-		return;
-#endif
 
 	if (unlikely(migratetype > MIGRATE_RECLAIMABLE)) {
 		if (unlikely(is_migrate_isolate(migratetype))) {
@@ -5766,15 +5746,6 @@ retry:
 
 	if (page)
 		goto got_pg;
-#ifdef CONFIG_OPLUS_FEATURE_UXMEM_OPT
-	page = get_page_from_uxmempool(gfp_mask, order, ac->migratetype);
-	if (page)
-		goto got_pg;
-
-	if (uxmem_should_alloc_pages_retry(gfp_mask, &alloc_flags,
-				ac->preferred_zoneref->zone))
-		goto retry;
-#endif
 
 #ifdef CONFIG_CONT_PTE_HUGEPAGE
 	/*
@@ -6695,9 +6666,6 @@ void si_meminfo(struct sysinfo *val)
 	val->mem_unit = PAGE_SIZE;
 
 	trace_android_vh_si_meminfo_adjust(&val->totalram, &val->freeram);
-#ifdef CONFIG_OPLUS_FEATURE_UXMEM_OPT
-	uxmempool_meminfo_adjust(val);
-#endif
 }
 
 EXPORT_SYMBOL(si_meminfo);

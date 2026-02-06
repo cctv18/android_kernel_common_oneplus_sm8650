@@ -7186,12 +7186,6 @@ static void snapshot_chp_refaults(struct mem_cgroup *target_memcg, pg_data_t *pg
 }
 #endif
 
-#ifdef CONFIG_OPLUS_FEATURE_UXMEM_OPT
-extern bool current_is_key_task(void);
-static unsigned long allocstall_ux = 0;
-module_param_named(allocstall_ux, allocstall_ux, ulong, S_IRUGO | S_IWUSR);
-#endif
-
 /*
  * This is the main entry point to direct page reclaim.
  *
@@ -7222,12 +7216,6 @@ retry:
 
 	if (!cgroup_reclaim(sc))
 		__count_zid_vm_events(ALLOCSTALL, sc->reclaim_idx, 1);
-#ifdef CONFIG_OPLUS_FEATURE_UXMEM_OPT
-	if (current_is_key_task())
-		allocstall_ux += 1;
-#endif
-
-
 
 	do {
 		if (!sc->proactive)

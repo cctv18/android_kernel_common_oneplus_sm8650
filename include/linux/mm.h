@@ -4697,9 +4697,6 @@ extern inline bool handle_chp_ext_cmd(struct sysinfo *si);
 enum oplus_mm_ext_vh_type {
 	OPLUS_MM_VH_CURRENT_IS_UX = 0,
 	OPLUS_MM_VH_FREE_ZRAM_IS_OK,
-#ifdef CONFIG_OPLUS_FEATURE_UXMEM_OPT
-	OPLUS_MM_VH_CURRENT_IS_KEY,
-#endif
 };
 
 #ifdef CONFIG_CONT_PTE_HUGEPAGE

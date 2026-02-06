@@ -157,11 +157,4 @@ obj-$(CONFIG_GENERIC_IOREMAP) += ioremap.o
 obj-$(CONFIG_SHRINKER_DEBUG) += shrinker_debug.o
 obj-$(CONFIG_CONT_PTE_HUGEPAGE) += cont_pte_hugepage.o
 
-#ifdef OPLUS_KERNEL_MM
-obj-$(CONFIG_OPLUS_FEATURE_UXMEM_OPT) += oplus_bsp_uxmem_opt.o
-oplus_bsp_uxmem_opt-y := uxmem_opt.o
-
-obj-$(CONFIG_OPLUS_FEATURE_DYNAMIC_READAHEAD) += oplus_bsp_dynamic_readahead.o
-oplus_bsp_dynamic_readahead-y := dynamic_readahead.o
-#endif
 obj-$(CONFIG_BLOCKIO_UX_OPT) += fileprotect.o
