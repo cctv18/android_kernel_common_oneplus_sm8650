@@ -55,7 +55,7 @@ MODULE_PARM_DESC(mem_size,
 		"size of reserved RAM used to store oops/panic logs");
 
 static unsigned int mem_type;
-module_param(mem_type, uint, 0600);
+module_param(mem_type, uint, 0400);
 MODULE_PARM_DESC(mem_type,
 		"memory type: 0=write-combined (default), 1=unbuffered, 2=cached");
 
@@ -65,14 +65,14 @@ MODULE_PARM_DESC(max_reason,
 		 "maximum reason for kmsg dump (default 2: Oops and Panic) ");
 
 static int ramoops_ecc;
-module_param_named(ecc, ramoops_ecc, int, 0600);
+module_param_named(ecc, ramoops_ecc, int, 0400);
 MODULE_PARM_DESC(ramoops_ecc,
 		"if non-zero, the option enables ECC support and specifies "
 		"ECC buffer size in bytes (1 is a special value, means 16 "
 		"bytes ECC)");
 
 static int ramoops_dump_oops = -1;
-module_param_named(dump_oops, ramoops_dump_oops, int, 0600);
+module_param_named(dump_oops, ramoops_dump_oops, int, 0400);
 MODULE_PARM_DESC(dump_oops,
 		 "(deprecated: use max_reason instead) set to 1 to dump oopses & panics, 0 to only dump panics");
 
@@ -780,13 +780,13 @@ static int ramoops_probe(struct platform_device *pdev)
 
 	dump_mem_sz = cxt->size - cxt->console_size - cxt->ftrace_size
 			- cxt->pmsg_size;
-	err = ramoops_init_przs("console", dev, cxt, &cxt->dprzs, &paddr,
+	err = ramoops_init_przs("dmesg", dev, cxt, &cxt->dprzs, &paddr,
 				dump_mem_sz, cxt->record_size,
 				&cxt->max_dump_cnt, 0, 0);
 	if (err)
 		goto fail_out;
 
-	err = ramoops_init_prz("unused", dev, cxt, &cxt->cprz, &paddr,
+	err = ramoops_init_prz("console", dev, cxt, &cxt->cprz, &paddr,
 			       cxt->console_size, 0);
 	if (err)
 		goto fail_init_cprz;
