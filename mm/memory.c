@@ -4933,7 +4933,6 @@ vm_fault_t do_swap_page(struct vm_fault *vmf)
 	/* only critical native tasks have hugepage */
 	gfp_t critical_gfp = is_critical_native(current) ?  ___GFP_DIRECT_RECLAIM : 0;
 #endif
-	bool retry_by_vma_lock = false;
 
 	if (!pte_unmap_same(vmf))
 		goto out;
@@ -5313,13 +5312,8 @@ alloc_page_done:
 	else
 #endif
 		ret |= folio_lock_or_retry(folio, vmf);
-	if (ret & VM_FAULT_RETRY) {
-		if (fault_flag_allow_retry_first(vmf->flags) &&
-		    !(vmf->flags & FAULT_FLAG_RETRY_NOWAIT) &&
-		    (vmf->flags & FAULT_FLAG_VMA_LOCK))
-			retry_by_vma_lock = true;
+	if (ret & VM_FAULT_RETRY)
 		goto out_release;
-	}
 
 	if (swapcache) {
 		/*
@@ -5672,7 +5666,7 @@ out_release:
 	}
 	if (si)
 		put_swap_device(si);
-	return ret | (retry_by_vma_lock ? VM_FAULT_RETRY_VMA : 0);
+	return ret;
 }
 
 #ifdef CONFIG_CONT_PTE_HUGEPAGE
